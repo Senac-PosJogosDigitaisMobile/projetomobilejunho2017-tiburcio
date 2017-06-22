@@ -24,6 +24,10 @@ public class PlayerController : MonoBehaviour {
     //sprite renderer obtido atraves do gameobject
     private SpriteRenderer shapeRenderer;
 
+    public Animator bgAnimator;
+
+    public GameObject shapeChangeAnim;
+
    
     void Start()
     {
@@ -49,6 +53,7 @@ public class PlayerController : MonoBehaviour {
     // Update is called once per physics timestep
     void FixedUpdate()
     {
+        bgAnimator.SetFloat("xPosition",transform.position.x);
         if (canControl)
         {
             Vector3 rawPosition = cam.ScreenToWorldPoint(Input.mousePosition);
@@ -68,6 +73,7 @@ public class PlayerController : MonoBehaviour {
         {
             shapeIndex = 0;
         }
+        Instantiate(shapeChangeAnim, shapeHolder.transform);
         shapeRenderer.sprite = shapes[shapeIndex];
     }
 

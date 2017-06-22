@@ -5,12 +5,19 @@ using UnityEngine.UI;
 
 public class PlayerScore : MonoBehaviour {
 
+    public GameController gameController;
     public PlayerController playerController;
     public Text scoreMultiplierText;
-    public GUIText scoreText;
+    public Text scoreText;
     public int scoreValue;
     public GameObject GameOverUI;
-    private int scoreMultiplier, scoreMaxMultiplier = 11;
+    private int scoreMultiplier, scoreMaxMultiplier = 6;
+    public SpriteRenderer shapeRenderer;
+    private AudioSource audioSrc;
+    public AudioClip pickupSound;
+
+    public Animator scoreAnimator;
+
 
     private int score;
 
@@ -18,6 +25,7 @@ public class PlayerScore : MonoBehaviour {
     {
         scoreMultiplier = 1;
         score = 0;
+        audioSrc = GetComponent<AudioSource>();
         UpdateScore();
     }
 
@@ -25,6 +33,12 @@ public class PlayerScore : MonoBehaviour {
     {
         if (other.gameObject.CompareTag(playerController.ReturnShape()))
         {
+            scoreAnimator.SetTrigger("Score");
+            //Debug.Log(scoreMultiplier);
+            audioSrc.pitch = (scoreMultiplier*0.1f)+1;
+            audioSrc.PlayOneShot(pickupSound);
+            //shapeRenderer.color = new Color(1f,1f,scoreMultiplier*0.1f,1f);
+            //Debug.Log(shapeRenderer.color);
             score += scoreValue * scoreMultiplier;
             scoreMultiplier++;
             if (scoreMultiplier == scoreMaxMultiplier)
@@ -35,9 +49,10 @@ public class PlayerScore : MonoBehaviour {
         }
         else
         {
+            gameController.setGameOver(true);
             //scoreMultiplier = 1;
             //playerController.changeShape();
-            GameOverUI.SetActive(true);
+            //GameOverUI.SetActive(true);
         }
         UpdateScore();
     }
