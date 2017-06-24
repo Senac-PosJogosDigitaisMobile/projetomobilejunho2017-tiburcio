@@ -9,6 +9,7 @@ public class SpawnData
     public float spawnTimeIntervalMin, spawnTimeIntervalMax;
     public bool canChangeColor, isWhite;
     public Color[] shapeColor;
+    public int shapesPerWave;
 }
 
 public class GameController : MonoBehaviour
@@ -16,17 +17,19 @@ public class GameController : MonoBehaviour
 
     public Camera cam;
     public GameObject[] shapes;
-    public int shapesPerWave = 10;
+    public GameObject starShape;
+    //public int shapesPerWave = 10;
     public SpawnData[] spawnData;
     int spawnDataIndex;
     public int scoreIntervalToChangeSpawnIndex;
-    
+
+    public float nextStarDrop, stardropMinInterval, stardropMaxInterval;
 
     public float maxSpeed = 2, startingSpeed = 0.4f;
 
 
     public GameObject gameOverText;
-   // public GameObject restartButton;
+    // public GameObject restartButton;
     public GameObject splashScreen;
     public GameObject startButton;
     public PlayerController playerController;
@@ -37,10 +40,12 @@ public class GameController : MonoBehaviour
 
     private float maxWidth;
 
+    public AudioSource audioSrc;
+    public AudioClip selectSound;
 
     void Start()
     {
-
+        audioSrc = GetComponent<AudioSource>();
         if (cam == null)
         {
             cam = Camera.main;
@@ -55,6 +60,8 @@ public class GameController : MonoBehaviour
 
     public void StartGame()
     {
+        nextStarDrop = Random.Range(stardropMinInterval,stardropMaxInterval);
+        audioSrc.PlayOneShot(selectSound);
         spawnDataIndex = 0;
         isGameOver = false;
         splashScreen.SetActive(false);
@@ -65,6 +72,8 @@ public class GameController : MonoBehaviour
 
     public void RestartGame()
     {
+
+        audioSrc.PlayOneShot(selectSound);
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
@@ -78,17 +87,31 @@ public class GameController : MonoBehaviour
     public IEnumerator Spawn()
     {
         yield return new WaitForSeconds(1.0f);
-
+        int spawnCount = 0;
         while (!isGameOver)
         {
             changeSpawnIndex();
-            for (int i = 0; i < shapesPerWave; i++)
+            for (int i = 0; i < spawnData[spawnDataIndex].shapesPerWave; i++)
             {
-                InstantiateShape(
-                    Random.Range(0, shapes.Length),
-                    spawnData[spawnDataIndex].shapeColor[Random.Range(0, spawnData[spawnDataIndex].shapeColor.Length)],
-                    startingSpeed
+                if (spawnCount>nextStarDrop)
+                {
+                    nextStarDrop = spawnCount+Random.Range(stardropMinInterval, stardropMaxInterval);
+                    Vector3 spawnPosition = new Vector3(
+                        transform.position.x + Random.Range(-maxWidth, maxWidth),
+                        transform.position.y,
+                        0.0f
                     );
+                    Quaternion spawnRotation = Quaternion.identity;
+                    GameObject obj = Instantiate(starShape, spawnPosition, spawnRotation);
+                }
+                else
+                {
+                    InstantiateShape(
+                        Random.Range(0, shapes.Length),
+                        spawnData[spawnDataIndex].shapeColor[Random.Range(0, spawnData[spawnDataIndex].shapeColor.Length)],
+                        startingSpeed
+                        );
+                }
                 yield return new WaitForSeconds(Random.Range(
                     spawnData[spawnDataIndex].spawnTimeIntervalMin,
                     spawnData[spawnDataIndex].spawnTimeIntervalMax));
@@ -99,6 +122,8 @@ public class GameController : MonoBehaviour
 
             }
             yield return new WaitForSeconds(2f);
+            spawnCount++;
+            Debug.Log(spawnCount);
         }
 
     }
@@ -131,7 +156,7 @@ public class GameController : MonoBehaviour
             if (spawnDataIndex == spawnData.Length)
                 spawnDataIndex--;
         }
-        
+
     }
 
 

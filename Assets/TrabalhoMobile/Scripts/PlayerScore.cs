@@ -12,6 +12,7 @@ public class PlayerScore : MonoBehaviour {
     public int scoreValue;
     public GameObject GameOverUI;
     private int scoreMultiplier, scoreMaxMultiplier = 5;
+    public int starMultiplier;
     public SpriteRenderer shapeRenderer;
     private AudioSource audioSrc;
     public AudioClip pickupSound, changeShapeSound;
@@ -36,6 +37,23 @@ public class PlayerScore : MonoBehaviour {
 
     void OnTriggerEnter2D(Collider2D other)
     {
+        if (other.gameObject.CompareTag("Star"))
+        {
+            playerController.PickupStar();
+            return;
+        }
+        if (playerController.ReturnShape()=="Star")
+        {
+            score += scoreValue * starMultiplier;
+            UpdateScore();
+            scoreMultiplierText.color = scoreMultiplierColor[scoreMultiplierColor.Length-1];
+            scoreMultiplierText.text = (starMultiplier*scoreValue).ToString();
+            scoreAnimator.SetTrigger("Score");
+            audioSrc.pitch = (starMultiplier * 0.1f) + 1;
+            audioSrc.PlayOneShot(pickupSound);
+            //shapeChangeFlash();
+            return;
+        }
         if (other.gameObject.CompareTag(playerController.ReturnShape()))
         {
             score += scoreValue * scoreMultiplier;
@@ -48,10 +66,7 @@ public class PlayerScore : MonoBehaviour {
                 scoreMultiplier = 1;
                 playerController.changeShape();
                 audioSrc.PlayOneShot(changeShapeSound);
-                Instantiate(
-                playerChangeShape,
-                new Vector3(transform.position.x, 3f, -10f),
-                transform.rotation);
+                shapeChangeFlash();
             }
             else
             {
@@ -66,12 +81,19 @@ public class PlayerScore : MonoBehaviour {
             playerController.ToggleControl(false);
             Destroy(gameObject);
             Instantiate(
-                playerExplosion, 
-                new Vector3(transform.position.x,3f,-10f),
+                playerExplosion,
+                new Vector3(transform.position.x, 3f, -10f),
                 transform.rotation);
         }
     }
 
+    public void shapeChangeFlash()
+    {
+        Instantiate(
+                playerChangeShape,
+                new Vector3(transform.position.x, 3f, -10f),
+                transform.rotation);
+    }
 
     void UpdateScore()
     {

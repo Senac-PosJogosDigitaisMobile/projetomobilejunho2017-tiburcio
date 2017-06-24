@@ -20,6 +20,8 @@ public class PlayerController : MonoBehaviour {
     //3 triangulo
     public Sprite[] shapes;
     public Sprite starShape;
+    public float starPickupTime;
+    bool hasStar = false;
 
     float playerAlpha = 1;
 
@@ -29,9 +31,12 @@ public class PlayerController : MonoBehaviour {
     private SpriteRenderer shapeRenderer;
 
     public Animator bgAnimator;
-    public Animator playerAnimator;
+    Animator playerAnimator;
     
     public float timeSmoothDamp;
+
+    PlayerScore playerScore;
+    public AudioSource bgMusicSrc,starMusicSrc;
 
     void Start()
     {
@@ -52,8 +57,10 @@ public class PlayerController : MonoBehaviour {
         //começar com o circulo
         shapeIndex = 0;
 
+        hasStar = false;
 
         playerAnimator = GetComponent<Animator>();
+        playerScore = GetComponent<PlayerScore>();
     }
     
 
@@ -65,7 +72,7 @@ public class PlayerController : MonoBehaviour {
             playerAnimator.SetBool("Fire1", Input.GetButton("Fire1"));
             GetComponent<SpriteRenderer>().color = new Color(1f,1f,1f, playerAlpha);
             Vector3 rawPosition = cam.ScreenToWorldPoint(Input.mousePosition);
-            Vector3 targetPosition = new Vector3(rawPosition.x, 0.0f, 0.0f);
+            Vector3 targetPosition = new Vector3(rawPosition.x, 0f, 0.0f);
             float targetWidth = Mathf.Clamp(targetPosition.x, -maxWidth, maxWidth);
             targetPosition = new Vector3(targetWidth, targetPosition.y, targetPosition.z);
             Vector3 velocity = Vector3.zero;
@@ -77,6 +84,7 @@ public class PlayerController : MonoBehaviour {
 
     public void changeShape()
     {
+        hasStar = false;
         shapeIndex++;
         if (shapeIndex == shapes.Length)
         {
@@ -85,8 +93,32 @@ public class PlayerController : MonoBehaviour {
         shapeRenderer.sprite = shapes[shapeIndex];
     }
 
+    public void PickupStar()
+    {
+        bgMusicSrc.volume = 0f;
+        starMusicSrc.Play();
+        hasStar = true;
+
+        playerScore.shapeChangeFlash();
+        shapeRenderer.sprite = starShape;
+        StartCoroutine(StarPowerTime());
+    }
+
+    IEnumerator StarPowerTime()
+    {
+        yield return new WaitForSeconds(starPickupTime);
+        playerScore.shapeChangeFlash();
+
+        starMusicSrc.Stop();
+        bgMusicSrc.volume = 0.2f;
+        changeShape();
+    }
+
+
     public string ReturnShape()
     {
+        if (hasStar)
+            return "Star";
         if (shapeIndex == 0)
             return "Circulo";
         if (shapeIndex == 1)
