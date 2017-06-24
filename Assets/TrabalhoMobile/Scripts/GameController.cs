@@ -3,30 +3,44 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class GameController : MonoBehaviour {
+[System.Serializable]
+public class SpawnData
+{
+    public float spawnTimeIntervalMin, spawnTimeIntervalMax;
+    public bool canChangeColor, isWhite;
+    public Color[] shapeColor;
+}
+
+public class GameController : MonoBehaviour
+{
 
     public Camera cam;
     public GameObject[] shapes;
-    //public float timeLeft;
-    //public GUIText timerText;
+    public int shapesPerWave = 10;
+    public SpawnData[] spawnData;
+    int spawnDataIndex;
+    public int scoreIntervalToChangeSpawnIndex;
+    
+
+    public float maxSpeed = 2, startingSpeed = 0.4f;
+
+
     public GameObject gameOverText;
-    public GameObject restartButton;
+   // public GameObject restartButton;
     public GameObject splashScreen;
     public GameObject startButton;
     public PlayerController playerController;
+    public PlayerScore playerScore;
 
-    public Color[] shapeColors;
-    public float objectSpeed=5;
 
     private bool isGameOver = false;
 
     private float maxWidth;
-    //private bool counting;
 
-    // Use this for initialization
+
     void Start()
     {
-        
+
         if (cam == null)
         {
             cam = Camera.main;
@@ -35,30 +49,13 @@ public class GameController : MonoBehaviour {
         Vector3 targetWidth = cam.ScreenToWorldPoint(upperCorner);
         float playerWidth = shapes[0].GetComponent<Renderer>().bounds.extents.x;
         maxWidth = targetWidth.x - playerWidth;
-        //timerText.text = "TIME:\n" + Mathf.RoundToInt(timeLeft);
     }
 
-    void FixedUpdate()
-    {
-        //if (counting)
-        //{
-        //    timeLeft -= Time.deltaTime;
-        //    if (timeLeft < 0)
-        //    {
-        //        timeLeft = 0;
-        //    }
-        //    timerText.text = "TIME:\n" + Mathf.RoundToInt(timeLeft);
-        //}
-        //if (transform.position.x>maxWidth||transform.position.x<-maxWidth)
-        //{
-        //    objectSpeed = -1 * objectSpeed;
-        //}
-        //transform.position = new Vector3(transform.position.x+(objectSpeed*Time.deltaTime),transform.position.y,transform.position.z);
-    }
+
 
     public void StartGame()
     {
-        Time.timeScale = 1;
+        spawnDataIndex = 0;
         isGameOver = false;
         splashScreen.SetActive(false);
         startButton.SetActive(false);
@@ -74,87 +71,68 @@ public class GameController : MonoBehaviour {
     public void setGameOver(bool setBool)
     {
         isGameOver = setBool;
-        Debug.Log(setBool);
+        gameOverText.SetActive(setBool);
+
     }
 
     public IEnumerator Spawn()
     {
         yield return new WaitForSeconds(1.0f);
 
-        //counting = true;
         while (!isGameOver)
         {
-            //Debug.Log(ReturnSpawnWave());
-            switch (ReturnSpawnWave())
+            changeSpawnIndex();
+            for (int i = 0; i < shapesPerWave; i++)
             {
-                case "1":
-                    InstantiateShape(Random.Range(0, shapes.Length), 0);
-                    yield return new WaitForSeconds(Random.Range(1.4f,1.8f));
-                    break;
-                case "2":
-                    InstantiateShape(Random.Range(0, shapes.Length), 0);
-                    yield return new WaitForSeconds(Random.Range(1f, 1.4f));
-                    break;
-                case "3":
-                    InstantiateShape(Random.Range(0, shapes.Length), 0);
-                    yield return new WaitForSeconds(Random.Range(0.8f, 1f));
-                    break;
-                case "4":
-                    InstantiateShape(Random.Range(0, shapes.Length), Random.Range(1, shapeColors.Length));
-                    yield return new WaitForSeconds(Random.Range(0.4f,0.5f));
-                    break;
-                default:
-                    break;
+                InstantiateShape(
+                    Random.Range(0, shapes.Length),
+                    spawnData[spawnDataIndex].shapeColor[Random.Range(0, spawnData[spawnDataIndex].shapeColor.Length)],
+                    startingSpeed
+                    );
+                yield return new WaitForSeconds(Random.Range(
+                    spawnData[spawnDataIndex].spawnTimeIntervalMin,
+                    spawnData[spawnDataIndex].spawnTimeIntervalMax));
             }
-           
+            if (startingSpeed < maxSpeed)
+            {
+                startingSpeed = startingSpeed + 0.05f;
+
+            }
+            yield return new WaitForSeconds(2f);
         }
-        playerController.ToggleControl(false);
-        yield return new WaitForSeconds(0.5f);
-        gameOverText.SetActive(true);
-        yield return new WaitForSeconds(1.0f);
-        restartButton.SetActive(true);
+
     }
 
-   
 
-    void InstantiateShape(int shapeIndex,int colorIndex)
+
+    void InstantiateShape(int shapeIndex, Color shapeColor, float gravityScale)
     {
         GameObject objShape = shapes[shapeIndex];
-        SpriteRenderer shapeRenderer = objShape.GetComponent<SpriteRenderer>();
-        shapeRenderer.color = shapeColors[colorIndex];
         Vector3 spawnPosition = new Vector3(
-            //transform.position.x,transform.position.y,transform.position.z
             transform.position.x + Random.Range(-maxWidth, maxWidth),
             transform.position.y,
             0.0f
         );
         Quaternion spawnRotation = Quaternion.identity;
-        Instantiate(objShape, spawnPosition, spawnRotation);
+        GameObject obj = Instantiate(objShape, spawnPosition, spawnRotation);
+        obj.GetComponent<Rigidbody2D>().gravityScale = gravityScale;
+        if (spawnData[spawnDataIndex].canChangeColor)
+            obj.GetComponent<SpriteRenderer>().color = shapeColor;
+        if (spawnData[spawnDataIndex].isWhite)
+            obj.GetComponent<SpriteRenderer>().color = Color.white;
     }
 
-    string ReturnSpawnWave()
+    void changeSpawnIndex()
     {
-        if (Time.timeSinceLevelLoad<15)
+        if (playerScore.score > scoreIntervalToChangeSpawnIndex)
         {
-            return "1";
+            scoreIntervalToChangeSpawnIndex = scoreIntervalToChangeSpawnIndex + playerScore.score;
+            spawnDataIndex++;
+            if (spawnDataIndex == spawnData.Length)
+                spawnDataIndex--;
         }
-        else
-        {
-            if (Time.timeSinceLevelLoad < 30)
-            {
-                return "2";
-            }
-            else
-            {
-                if (Time.timeSinceLevelLoad < 45)
-                {
-                    return "3";
-                }
-                else
-                {
-                    return "4";
-                }
-            }
-        }
+        
     }
+
+
 }

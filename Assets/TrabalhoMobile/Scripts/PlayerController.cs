@@ -19,16 +19,20 @@ public class PlayerController : MonoBehaviour {
     //1 quadrado
     //3 triangulo
     public Sprite[] shapes;
+    public Sprite starShape;
+
+    float playerAlpha = 1;
+
     //game object que tem o sprite renderer
     public GameObject shapeHolder;
     //sprite renderer obtido atraves do gameobject
     private SpriteRenderer shapeRenderer;
 
     public Animator bgAnimator;
+    public Animator playerAnimator;
+    
+    public float timeSmoothDamp;
 
-    public GameObject shapeChangeAnim;
-
-   
     void Start()
     {
         //se não setar camera é ulitizada a main camera
@@ -48,19 +52,24 @@ public class PlayerController : MonoBehaviour {
         //começar com o circulo
         shapeIndex = 0;
 
-    }
 
-    // Update is called once per physics timestep
+        playerAnimator = GetComponent<Animator>();
+    }
+    
+
     void FixedUpdate()
     {
         bgAnimator.SetFloat("xPosition",transform.position.x);
         if (canControl)
         {
+            playerAnimator.SetBool("Fire1", Input.GetButton("Fire1"));
+            GetComponent<SpriteRenderer>().color = new Color(1f,1f,1f, playerAlpha);
             Vector3 rawPosition = cam.ScreenToWorldPoint(Input.mousePosition);
             Vector3 targetPosition = new Vector3(rawPosition.x, 0.0f, 0.0f);
             float targetWidth = Mathf.Clamp(targetPosition.x, -maxWidth, maxWidth);
             targetPosition = new Vector3(targetWidth, targetPosition.y, targetPosition.z);
-            GetComponent<Rigidbody2D>().MovePosition(targetPosition);
+            Vector3 velocity = Vector3.zero;
+            GetComponent<Rigidbody2D>().MovePosition(Vector3.SmoothDamp(transform.position, targetPosition, ref velocity, timeSmoothDamp));
         }
         if (Input.GetButtonDown("Cancel"))
             Application.Quit();
@@ -73,7 +82,6 @@ public class PlayerController : MonoBehaviour {
         {
             shapeIndex = 0;
         }
-        Instantiate(shapeChangeAnim, shapeHolder.transform);
         shapeRenderer.sprite = shapes[shapeIndex];
     }
 

@@ -11,15 +11,20 @@ public class PlayerScore : MonoBehaviour {
     public Text scoreText;
     public int scoreValue;
     public GameObject GameOverUI;
-    private int scoreMultiplier, scoreMaxMultiplier = 6;
+    private int scoreMultiplier, scoreMaxMultiplier = 5;
     public SpriteRenderer shapeRenderer;
     private AudioSource audioSrc;
-    public AudioClip pickupSound;
+    public AudioClip pickupSound, changeShapeSound;
+
+    public Color[] scoreMultiplierColor;
+
+    public GameObject playerExplosion;
+    public GameObject playerChangeShape;
 
     public Animator scoreAnimator;
 
 
-    private int score;
+    public int score;
 
     void Start()
     {
@@ -33,40 +38,44 @@ public class PlayerScore : MonoBehaviour {
     {
         if (other.gameObject.CompareTag(playerController.ReturnShape()))
         {
-            scoreAnimator.SetTrigger("Score");
-            //Debug.Log(scoreMultiplier);
-            audioSrc.pitch = (scoreMultiplier*0.1f)+1;
-            audioSrc.PlayOneShot(pickupSound);
-            //shapeRenderer.color = new Color(1f,1f,scoreMultiplier*0.1f,1f);
-            //Debug.Log(shapeRenderer.color);
             score += scoreValue * scoreMultiplier;
+            UpdateScore();
+            scoreMultiplierText.color = scoreMultiplierColor[scoreMultiplier - 1];
             scoreMultiplier++;
             if (scoreMultiplier == scoreMaxMultiplier)
             {
+                scoreAnimator.SetTrigger("Score");
                 scoreMultiplier = 1;
                 playerController.changeShape();
+                audioSrc.PlayOneShot(changeShapeSound);
+                Instantiate(
+                playerChangeShape,
+                new Vector3(transform.position.x, 3f, -10f),
+                transform.rotation);
+            }
+            else
+            {
+                scoreAnimator.SetTrigger("Score");
+                audioSrc.pitch = (scoreMultiplier * 0.1f) + 1;
+                audioSrc.PlayOneShot(pickupSound);
             }
         }
         else
         {
             gameController.setGameOver(true);
-            //scoreMultiplier = 1;
-            //playerController.changeShape();
-            //GameOverUI.SetActive(true);
+            playerController.ToggleControl(false);
+            Destroy(gameObject);
+            Instantiate(
+                playerExplosion, 
+                new Vector3(transform.position.x,3f,-10f),
+                transform.rotation);
         }
-        UpdateScore();
     }
 
-    //void OnCollisionEnter2D (Collision2D collision) {
-    //	if (collision.gameObject.tag == "Bomb") {
-    //		score -= ballValue * 2;
-    //		UpdateScore ();
-    //	}
-    //}
 
     void UpdateScore()
     {
-        scoreMultiplierText.text = scoreMultiplier.ToString();
+        scoreMultiplierText.text = (scoreMultiplier * scoreValue).ToString();//scoreMultiplier.ToString()+"X";
         scoreText.text = "SCORE:\n" + score;
     }
 }

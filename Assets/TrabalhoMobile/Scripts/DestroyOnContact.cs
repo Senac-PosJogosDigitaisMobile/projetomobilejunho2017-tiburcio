@@ -8,7 +8,7 @@ public class DestroyOnContact : MonoBehaviour {
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        Instantiate(scoreFlash, other.gameObject.transform);
+        //Instantiate(scoreFlash, other.gameObject.transform);
         Destroy(other.gameObject);
     }
 }
