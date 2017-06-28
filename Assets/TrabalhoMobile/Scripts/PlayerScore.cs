@@ -25,6 +25,8 @@ public class PlayerScore : MonoBehaviour {
     public Animator scoreAnimator;
 
 
+    public Text currentShapeCounter;
+
     public int score;
 
     void Start()
@@ -33,6 +35,7 @@ public class PlayerScore : MonoBehaviour {
         score = 0;
         audioSrc = GetComponent<AudioSource>();
         UpdateScore();
+        currentShapeCounter.text = scoreMultiplier.ToString() + "x";
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -74,6 +77,8 @@ public class PlayerScore : MonoBehaviour {
                 audioSrc.pitch = (scoreMultiplier * 0.1f) + 1;
                 audioSrc.PlayOneShot(pickupSound);
             }
+
+            currentShapeCounter.text = scoreMultiplier.ToString()+"x";
         }
         else
         {

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+using UnityEngine.UI;
+
 public class PlayerController : MonoBehaviour {
 
     //main camera
@@ -23,6 +25,8 @@ public class PlayerController : MonoBehaviour {
     public float starPickupTime;
     bool hasStar = false;
 
+    public Image currentShape, nextShape;
+
     float playerAlpha = 1;
 
     //game object que tem o sprite renderer
@@ -37,6 +41,10 @@ public class PlayerController : MonoBehaviour {
 
     PlayerScore playerScore;
     public AudioSource bgMusicSrc,starMusicSrc;
+
+
+    public Animator starCounterAnimator;
+    public Text starCounterTxt;
 
     void Start()
     {
@@ -56,7 +64,8 @@ public class PlayerController : MonoBehaviour {
         canControl = false;
         //começar com o circulo
         shapeIndex = 0;
-
+        currentShape.sprite = shapes[0];
+        nextShape.sprite = shapes[1];
         hasStar = false;
 
         playerAnimator = GetComponent<Animator>();
@@ -90,6 +99,13 @@ public class PlayerController : MonoBehaviour {
         {
             shapeIndex = 0;
         }
+        int nextShapeIndex = shapeIndex + 1;
+        if (nextShapeIndex == shapes.Length)
+        {
+            nextShapeIndex = 0;
+        }
+        currentShape.sprite = shapes[shapeIndex];
+        nextShape.sprite = shapes[nextShapeIndex];
         shapeRenderer.sprite = shapes[shapeIndex];
     }
 
@@ -101,14 +117,28 @@ public class PlayerController : MonoBehaviour {
 
         playerScore.shapeChangeFlash();
         shapeRenderer.sprite = starShape;
+        shapeIndex--;
+        if (shapeIndex<0)
+        {
+            shapeIndex = shapes.Length-1;
+        }
         StartCoroutine(StarPowerTime());
     }
 
     IEnumerator StarPowerTime()
     {
-        yield return new WaitForSeconds(starPickupTime);
-        playerScore.shapeChangeFlash();
+        starCounterAnimator.gameObject.SetActive(true);
+        float timeDisplay = starPickupTime;
+        for (int i = 0; i < starPickupTime; i++)
+        {
+            starCounterTxt.text = Mathf.RoundToInt(timeDisplay).ToString();
+            starCounterAnimator.SetTrigger("SetCount");
+            yield return new WaitForSeconds(1);
+            timeDisplay--;
+        }
 
+        starCounterAnimator.gameObject.SetActive(false);
+        playerScore.shapeChangeFlash();
         starMusicSrc.Stop();
         bgMusicSrc.volume = 0.2f;
         changeShape();

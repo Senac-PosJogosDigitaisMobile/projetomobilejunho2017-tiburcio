@@ -31,7 +31,11 @@ public class GameController : MonoBehaviour
     public GameObject gameOverText;
     // public GameObject restartButton;
     public GameObject splashScreen;
+    public GameObject splashTittle;
     public GameObject startButton;
+    public GameObject scoreTxt;
+    public GameObject splashScreenInfoBtns;
+    public GameObject shapeInfo;
     public PlayerController playerController;
     public PlayerScore playerScore;
 
@@ -43,8 +47,18 @@ public class GameController : MonoBehaviour
     public AudioSource audioSrc;
     public AudioClip selectSound;
 
+    public bool hasSound;
+
     void Start()
     {
+        if (AudioListener.volume==0)
+        {
+            hasSound = false;
+        }
+        else
+        {
+            hasSound = true;
+        }
         audioSrc = GetComponent<AudioSource>();
         if (cam == null)
         {
@@ -60,11 +74,14 @@ public class GameController : MonoBehaviour
 
     public void StartGame()
     {
-        nextStarDrop = Random.Range(stardropMinInterval,stardropMaxInterval);
+        nextStarDrop = Random.Range(stardropMinInterval, stardropMaxInterval);
         audioSrc.PlayOneShot(selectSound);
         spawnDataIndex = 0;
         isGameOver = false;
         splashScreen.SetActive(false);
+        scoreTxt.SetActive(true);
+        shapeInfo.SetActive(true);
+        splashScreenInfoBtns.SetActive(false);
         startButton.SetActive(false);
         playerController.ToggleControl(true);
         StartCoroutine(Spawn());
@@ -90,19 +107,22 @@ public class GameController : MonoBehaviour
         int spawnCount = 0;
         while (!isGameOver)
         {
+            float spawnDropIndex = Random.Range(1, spawnData[spawnDataIndex].shapesPerWave);
             changeSpawnIndex();
             for (int i = 0; i < spawnData[spawnDataIndex].shapesPerWave; i++)
             {
-                if (spawnCount>nextStarDrop)
+                //Debug.Log(i);
+                //Debug.Log(spawnDropIndex);
+                if (spawnCount > nextStarDrop && spawnDropIndex == i)
                 {
-                    nextStarDrop = spawnCount+Random.Range(stardropMinInterval, stardropMaxInterval);
+
+                    nextStarDrop = spawnCount + Random.Range(stardropMinInterval, stardropMaxInterval);
                     Vector3 spawnPosition = new Vector3(
                         transform.position.x + Random.Range(-maxWidth, maxWidth),
                         transform.position.y,
                         0.0f
                     );
-                    Quaternion spawnRotation = Quaternion.identity;
-                    GameObject obj = Instantiate(starShape, spawnPosition, spawnRotation);
+                    Quaternion spawnRotation = Quaternion.identity; Instantiate(starShape, spawnPosition, spawnRotation);
                 }
                 else
                 {
@@ -118,12 +138,10 @@ public class GameController : MonoBehaviour
             }
             if (startingSpeed < maxSpeed)
             {
-                startingSpeed = startingSpeed + 0.05f;
-
+                startingSpeed = startingSpeed + 0.02f;
             }
-            yield return new WaitForSeconds(2f);
+            yield return new WaitForSeconds(1f);
             spawnCount++;
-            Debug.Log(spawnCount);
         }
 
     }
@@ -159,5 +177,19 @@ public class GameController : MonoBehaviour
 
     }
 
+    public void toggleGlobalVolume()
+    {
+        hasSound = !hasSound;
+        if (hasSound)
+            AudioListener.volume = 1;
+        else
+            AudioListener.volume = 0;
+    }
+
+    public void HideSplash()
+    {
+        splashTittle.SetActive(!splashTittle.activeSelf);
+        startButton.SetActive(!startButton.activeSelf);
+    }
 
 }
